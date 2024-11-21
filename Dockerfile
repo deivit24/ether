@@ -33,7 +33,7 @@ RUN pip install -e ..
 COPY app /app/
 
 # Expose the port FastAPI is running on
-EXPOSE 8000
+EXPOSE 8082
 
 # Command to run the application using Uvicorn
 RUN chmod +x /app/start.sh
