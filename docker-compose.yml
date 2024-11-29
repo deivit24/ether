@@ -2,7 +2,6 @@ services:
   db:
     container_name: ether-db
     image: postgis/postgis:15-3.4-alpine
-    platform: linux/amd64
     restart: always
     env_file:
       - .env

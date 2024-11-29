@@ -3,7 +3,6 @@ from sqlmodel import Session, create_engine, select, SQLModel
 from app.crud import create_user
 from app.core.config import settings
 from app.models.user import User, UserCreate
-from app.models.message import Message, MessageCreate
 
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
