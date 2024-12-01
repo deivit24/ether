@@ -1,7 +1,7 @@
 from typing import Optional, List
 from datetime import datetime, UTC, timedelta
 from sqlalchemy import func
-from sqlmodel import Session, select
+from sqlmodel import Session, select, desc
 
 from app.core.security import get_password_hash
 from app.models.message import Message, MessageCreate
@@ -23,7 +23,9 @@ def get_nearby_messages(
         session: Session,
         lat: float,
         lon: float,
-        radius: Optional[float] = 5000.0
+        radius: Optional[float] = 5000.0,
+        limit: int = 10,
+        offset: int = 0
 ) -> List[Message]:
     """
     Retrieve messages within a specified radius using PostGIS spatial query.
@@ -31,7 +33,7 @@ def get_nearby_messages(
     # Define the current time in UTC
     current_time = datetime.now(UTC)
     # Create the query to find nearby messages
-    statement = select(Message).where(
+    statement = (select(Message).where(
         func.ST_DWithin(
             Message.location,
             func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326),
@@ -40,6 +42,11 @@ def get_nearby_messages(
         ),
         Message.delete_after >= current_time
     )
+    .order_by(desc(Message.created_at))
+    .limit(limit)
+    .offset(offset)
+    )
+
 
     # Execute the query and extract the message objects
     results = session.execute(statement).all()

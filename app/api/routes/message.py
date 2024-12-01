@@ -25,9 +25,8 @@ async def create_message(request: Request, session:SessionDep,  message: Message
     """
     Create a new message with the client IP and store it in the database.
     """
-    client_ip = request.client.host  # Extract client IP from the request
-    for header in request.headers.raw:
-        print(header)
+    client_ip = request.headers.get("x-forwarded-for", request.client.host)
+
     db_message = create_ether_message(session, message, client_ip)
     return db_message
 
