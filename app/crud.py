@@ -1,6 +1,9 @@
 from typing import Optional, List
 from datetime import datetime, UTC, timedelta
-from sqlalchemy import func
+from geoalchemy2.shape import to_shape
+from geopy import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+from sqlalchemy import func, Sequence, ScalarResult
 from sqlmodel import Session, select, desc
 
 from app.core.security import get_password_hash
@@ -26,7 +29,7 @@ def get_nearby_messages(
         radius: Optional[float] = 5000.0,
         limit: int = 10,
         offset: int = 0
-) -> List[Message]:
+) -> ScalarResult[Message]:
     """
     Retrieve messages within a specified radius using PostGIS spatial query.
     """
@@ -47,10 +50,8 @@ def get_nearby_messages(
     .offset(offset)
     )
 
-
     # Execute the query and extract the message objects
-    results = session.execute(statement).all()
-    messages = [message[0] for message in results]
+    messages = session.scalars(statement)
 
     return messages
 
@@ -66,12 +67,15 @@ def create_ether_message(
     # Build the message with the provided data
     created_at = datetime.now(UTC)
     delete_at = created_at + timedelta(seconds=message.delete_after_seconds)
+    address = get_address(float(message.lat), float(message.lon))
+    location = func.ST_SetSRID(func.ST_MakePoint(message.lon, message.lat), 4326)
     db_message = Message(
         content=message.content,
         created_at=created_at,
         delete_after=delete_at.astimezone(UTC),
-        location=func.ST_SetSRID(func.ST_MakePoint(message.lon, message.lat), 4326),
+        location=location,
         ip_address=client_ip,
+        address=address
     )
 
     # Add and commit the message to the database
@@ -80,3 +84,25 @@ def create_ether_message(
     session.refresh(db_message)
 
     return db_message
+
+
+def get_address(lat: float, lon: float) -> str:
+    geolocator = Nominatim(user_agent="my_geocoder")
+    try:
+        location = geolocator.reverse(f"{lat}, {lon}", exactly_one=True, language="en")
+        place = "Unknown"
+        if location:
+            address = location.raw['address']
+            city = address.get('city', None)
+            state = address.get('state', None)
+            country = address.get('country', None)
+            country_code = address.get('country_code', None)
+            if country_code != 'us':
+                place = f"{city}, {country}"
+            else:
+                place = f"{city}, {state}, {country}"
+        return place
+    except ValueError:
+        raise "Error: Invalid coordinate pair or location does not exist."
+    except (GeocoderTimedOut, GeocoderServiceError):
+        raise "Error: Geocoding service is unavailable. Please try again later."

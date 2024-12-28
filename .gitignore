@@ -3,3 +3,6 @@
 .DS_Store
 .idea
 app.egg-info
+**/__pycache__/
+**/__pycache__/*
+__pycache__

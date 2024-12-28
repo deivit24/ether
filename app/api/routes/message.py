@@ -15,8 +15,11 @@ def get_messages(
     lat: float = Query(...),
     lon: float = Query(...),
     radius: Optional[float] = Query(5000.0, gt=0),
+    limit: int = Query(50, gt=0),
+    offset: int = Query(0),
 ):
-    messages = get_nearby_messages(session, lat, lon, radius)
+
+    messages = get_nearby_messages(session, lat, lon, radius, limit, offset)
     return messages
 
 
