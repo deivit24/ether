@@ -1,9 +1,10 @@
 from typing import Optional, List
 from datetime import datetime, UTC, timedelta
-from geoalchemy2.shape import to_shape
-from geopy import Nominatim
+
+from fastapi.exceptions import ResponseValidationError
+from geopy import Nominatim, Location
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
-from sqlalchemy import func, Sequence, ScalarResult
+from sqlalchemy import func, ScalarResult
 from sqlmodel import Session, select, desc
 
 from app.core.security import get_password_hash
@@ -106,3 +107,15 @@ def get_address(lat: float, lon: float) -> str:
         raise "Error: Invalid coordinate pair or location does not exist."
     except (GeocoderTimedOut, GeocoderServiceError):
         raise "Error: Geocoding service is unavailable. Please try again later."
+
+
+def find_place(search: str) -> List[Location]:
+    geolocator = Nominatim(user_agent="my_geocoder")
+    try:
+        locations = geolocator.geocode(query=search, exactly_one=False, language="en")
+        if locations:
+            return locations
+        else:
+            raise ValueError(f"No location found for {search}")
+    except ValueError:
+        raise f"Error: No location found for {search}"
