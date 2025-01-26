@@ -1,9 +1,7 @@
-from typing import Optional, List
-from geopy.geocoders import Nominatim
-from fastapi import APIRouter, Request, Query
-from app.api.deps import SessionDep, get_db
-from app.crud import get_address
-from app.models.message import LocationResponse
+from typing import List
+from fastapi import APIRouter, Query
+from app.crud import get_address, find_place
+from app.models.message import LocationResponse, LocationSearchResponse
 
 router = APIRouter()
 
@@ -15,3 +13,12 @@ def get_location(
     address = get_address(lat, lon)
     place = {"address": address}
     return place
+
+@router.get("/search", response_model=List[LocationSearchResponse])
+def get_location(
+    search: str = Query(...),
+):
+    locations = find_place(search)
+
+
+    return locations

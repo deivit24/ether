@@ -1,14 +1,17 @@
-import math
 from typing import Optional, Any, Tuple
 from datetime import datetime, UTC, timedelta
 
+from fastapi import HTTPException
 from geoalchemy2.shape import to_shape
-from numpy.ma.extras import unique
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator, model_validator
 from sqlmodel import Field, SQLModel, Column
 from geoalchemy2 import Geometry
+from starlette import status
 
+MAX_CONTENT_LENGTH = 140
+DAY_IN_SECONDS = 60 * 60 * 24
+FIVE_MINUTES_IN_SECONDS = 60 * 5
 
 class MessageBase(SQLModel):
     content: Optional[str] = None
@@ -53,6 +56,21 @@ class MessageCreate(BaseModel):
     lat: float
     lon: float
 
+    @model_validator(mode='after')
+    def check_content_length(self):
+        if len(self.content) > MAX_CONTENT_LENGTH:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Content length exceeds the limit of {MAX_CONTENT_LENGTH} characters"
+            )
+        if not (FIVE_MINUTES_IN_SECONDS < self.delete_after_seconds <= DAY_IN_SECONDS):
+            HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="delete_after_seconds must be greater than zero"
+            )
+
+        return self
+
     class Config:
         # Allow arbitrary types like Geometry in the BaseModel
         arbitrary_types_allowed = True
@@ -77,3 +95,8 @@ class MessageResponse(BaseModel):
 
 class LocationResponse(BaseModel):
     address: str
+
+class LocationSearchResponse(BaseModel):
+    address: str
+    latitude: float
+    longitude: float

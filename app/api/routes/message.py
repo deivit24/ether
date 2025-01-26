@@ -1,8 +1,12 @@
 from typing import Optional, List
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, HTTPException
+from slowapi.util import get_ipaddr
 from sqlalchemy import delete
 from datetime import datetime, UTC
+
+from starlette import status
+
 from app.api.deps import SessionDep, get_db
 from app.crud import get_nearby_messages, create_ether_message
 from app.models.message import MessageCreate, MessageResponse, Message
@@ -28,7 +32,7 @@ async def create_message(request: Request, session:SessionDep,  message: Message
     """
     Create a new message with the client IP and store it in the database.
     """
-    client_ip = request.headers.get("x-forwarded-for", request.client.host)
+    client_ip = get_ipaddr(request)
 
     db_message = create_ether_message(session, message, client_ip)
     return db_message
