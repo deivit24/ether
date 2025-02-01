@@ -94,14 +94,10 @@ def get_address(lat: float, lon: float) -> str:
         place = "Unknown"
         if location:
             address = location.raw['address']
-            city = address.get('city', None)
-            state = address.get('state', None)
+            city = address.get('city', address.get('town', address.get('village', None)))
+            state = address.get('state', address.get('province', None))
             country = address.get('country', None)
-            country_code = address.get('country_code', None)
-            if country_code != 'us':
-                place = f"{city}, {country}"
-            else:
-                place = f"{city}, {state}, {country}"
+            place = f"{city}, {state}, {country}"
         return place
     except ValueError:
         raise "Error: Invalid coordinate pair or location does not exist."
