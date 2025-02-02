@@ -22,7 +22,8 @@ echo "Postgres started at $POSTGRES_HOST:$POSTGRES_PORT"
 cd ..
 alembic upgrade head
 
+export PROXY_HEADERS_ENABLED=true
 cd app
 
 # Start the API
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000 --proxy-headers

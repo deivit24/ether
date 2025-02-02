@@ -1,9 +1,7 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, UTC
 
 from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
-
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -11,19 +9,20 @@ from app.api.main import api_router
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_ipaddr
+
 from slowapi.middleware import SlowAPIMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.api.routes.message import delete_expired_messages
 from app.core.config import settings
+from app.core.security import get_ip_address
 
 scheduler = BackgroundScheduler()
 
 def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
-limiter = Limiter(key_func=get_ipaddr, default_limits=["100/minute"])
+limiter = Limiter(key_func=get_ip_address, default_limits=["100/minute"])
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model or other resources here
