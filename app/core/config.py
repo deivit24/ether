@@ -1,6 +1,6 @@
 import secrets
 import warnings
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Optional
 from decouple import config
 from pydantic import (
     AnyUrl,
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
         env_file=".env", env_ignore_empty=True, extra="ignore"
     )
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str = config("SECRET_KEY")
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     DOMAIN: str = "localhost"
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = config("POSTGRES_USER")
     POSTGRES_PASSWORD: str = config("POSTGRES_PASSWORD")
     POSTGRES_DB: str = config("POSTGRES_DB")
-
+    IPINFO_API_KEY: Optional[str] = config("IPINFO_API_KEY", default=None)
 
     FIRST_SUPERUSER: str = config("FIRST_SUPERUSER")
     FIRST_SUPERUSER_PASSWORD: str = config("FIRST_SUPERUSER_PASSWORD")
