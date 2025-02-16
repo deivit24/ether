@@ -1,17 +1,19 @@
+import ipinfo
+
 from typing import Optional, List
 from datetime import datetime, UTC, timedelta
 
-from fastapi.exceptions import ResponseValidationError
 from geopy import Nominatim, Location
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 from sqlalchemy import func, ScalarResult
 from sqlmodel import Session, select, desc
 
+from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models.message import Message, MessageCreate
 from app.models.user import User, UserCreate
 
-
+handler = ipinfo.getHandler(access_token=settings.IPINFO_API_KEY,cache_options={'ttl':30, 'maxsize': 128})
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
     db_obj = User.model_validate(
@@ -69,6 +71,9 @@ def create_ether_message(
     created_at = datetime.now(UTC)
     delete_at = created_at + timedelta(seconds=message.delete_after_seconds)
     address = get_address(float(message.lat), float(message.lon))
+    ip_location = get_location_from_ip()
+    is_local = is_approximately_same_location(message.lat, message.lon, float(ip_location["latitude"]), float(ip_location["longitude"]))
+
     location = func.ST_SetSRID(func.ST_MakePoint(message.lon, message.lat), 4326)
     db_message = Message(
         content=message.content,
@@ -76,7 +81,8 @@ def create_ether_message(
         delete_after=delete_at.astimezone(UTC),
         location=location,
         ip_address=client_ip,
-        address=address
+        address=address,
+        is_local=is_local
     )
 
     # Add and commit the message to the database
@@ -115,3 +121,22 @@ def find_place(search: str) -> List[Location]:
             raise ValueError(f"No location found for {search}")
     except ValueError:
         raise f"Error: No location found for {search}"
+
+
+def get_location_from_ip():
+    details = handler.getDetails()
+    return details.details
+
+
+def is_approximately_same_location(lat1, lon1, lat2, lon2, tolerance=0.1):
+    """
+    Checks if two locations (lat1, lon1) and (lat2, lon2) are within a given tolerance.
+
+    :param lat1: Latitude of first location
+    :param lon1: Longitude of first location
+    :param lat2: Latitude of second location
+    :param lon2: Longitude of second location
+    :param tolerance: Maximum allowed difference (default: 0.001)
+    :return: True if both latitude and longitude differences are within tolerance, False otherwise
+    """
+    return abs(lat1 - lat2) <= tolerance and abs(lon1 - lon2) <= tolerance

@@ -4,7 +4,7 @@ from datetime import datetime, UTC, timedelta
 from fastapi import HTTPException
 from geoalchemy2.shape import to_shape
 
-from pydantic import BaseModel, root_validator, model_validator
+from pydantic import BaseModel, model_validator
 from sqlmodel import Field, SQLModel, Column
 from geoalchemy2 import Geometry
 from starlette import status
@@ -20,6 +20,7 @@ class MessageBase(SQLModel):
     location: Any = Field(sa_column=Column(Geometry('POINT')))
     ip_address: str
     address: str
+    is_local: bool = True
 
     class Config:
         # Allow arbitrary types like Geometry
@@ -87,7 +88,7 @@ class MessageResponse(BaseModel):
     content: Optional[str]
     created_at: datetime
     delete_after: datetime
-    # ip_address: str
+    is_local: Optional[bool]
     address: str
     user: str
     # coordinates: Optional[Tuple[float, float]]  # Serialized coordinat

@@ -1,18 +1,15 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from apscheduler.schedulers.background import BackgroundScheduler
+from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.main import api_router
-
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-
-from slowapi.middleware import SlowAPIMiddleware
-from apscheduler.schedulers.background import BackgroundScheduler
-
 from app.api.routes.message import delete_expired_messages
 from app.core.config import settings
 from app.core.security import get_ip_address
@@ -54,6 +51,6 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(SessionMiddleware, secret_key="Thisisthebesticando")
+    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
