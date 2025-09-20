@@ -1,5 +1,5 @@
 from typing import Optional, Any, Tuple
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, UTC
 
 from fastapi import HTTPException
 from geoalchemy2.shape import to_shape

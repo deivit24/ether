@@ -100,7 +100,7 @@ def get_address(lat: float, lon: float) -> str:
         place = "Unknown"
         if location:
             address = location.raw['address']
-            city = address.get('city', address.get('town', address.get('village', None)))
+            city = address.get('city', address.get('town', address.get('village', address.get('neighbourhood', 'Unknown'))))
             state = address.get('state', address.get('province', None))
             country = address.get('country', None)
             place = f"{city}, {state}, {country}"
