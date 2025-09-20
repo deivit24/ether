@@ -10,7 +10,7 @@ class UserBase(SQLModel):
     full_name: str | None = None
 
 
-# Properties to receive via API on creation
+# Properties to receive via API lon creation
 class UserCreate(UserBase):
     password: str
 
